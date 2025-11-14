@@ -1,0 +1,709 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        32,
+        400
+      ],
+      "id": "dc59af67-4d70-411e-ab2f-9bbe17325f0d",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "n1MgYfU3HPUg9xam",
+          "name": "DEMO RAG mohammadfleity2002"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1KLfiBis4VfEg_JstFEXlGO9t-PcCEF1c",
+          "mode": "list",
+          "cachedResultName": "DEMO RAG",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1KLfiBis4VfEg_JstFEXlGO9t-PcCEF1c"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        400
+      ],
+      "id": "e4bcbc05-9558-47c2-a10c-a8b10ec67fb4",
+      "name": "On File Created Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "n1MgYfU3HPUg9xam",
+          "name": "DEMO RAG mohammadfleity2002"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 512,
+          "batchSize": 512
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        624
+      ],
+      "id": "bdb8d6f2-7e9f-481c-bcb8-4a5153f14c2b",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "4Mw0DebF7GUQBbVz",
+          "name": "Demo_openai_1"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        624
+      ],
+      "id": "1da2f453-587c-40c6-8601-f6688d43d9f7",
+      "name": "Default Data Loader",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        512,
+        832
+      ],
+      "id": "e747bb80-3a29-4e23-9d8d-65e2f8ca1eab",
+      "name": "Recursive Character Text Splitter",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "raggddemo",
+          "mode": "list",
+          "cachedResultName": "raggddemo"
+        },
+        "embeddingBatchSize": 100,
+        "options": {
+          "pineconeNamespace": "FAQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        400
+      ],
+      "id": "f821ead5-110c-4f22-9e21-4b96ec602437",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "IVCcL1odmF0l7Ko3",
+          "name": "PineconeApi DEMO02RAG account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an academic assistant for students at the Lebanese University (LU).  \nYour primary job is to answer questions using ONLY the information found in the retrieved documents from the LU dataset (vector store).\n\nLanguage rules:\n- You accept input in Arabic or English.\n- You ALWAYS respond in clear and correct Arabic.\n\nMain behavior:\n1. First, search the LU dataset and answer ONLY using retrieved content.  \n2. If the information is missing, incomplete, or not found in the dataset:\n   - DO NOT answer from your own knowledge.\n   - DO NOT hallucinate.\n   - Instead, politely ask the user:\n\n     \"لا أملك هذه المعلومة في قاعدة بيانات الجامعة اللبنانية. هل ترغب أن أبحث لك على الإنترنت؟\"\n\n3. Only search the internet if the user explicitly says “yes”.\n\nMore rules:\n- Be concise, helpful, and structured (use bullet points when needed).\n- Summarize retrieved content clearly.\n- If the question is unclear, ask for clarification.\n- If the user asks for information outside LU topics, handle it normally but still follow the dataset → ask-for-internet-search rule.\n- Never reply in English unless the user explicitly asks for English.\n\nWhen dataset content is used:\n- Mention that the answer is based on the LU dataset.\n- If the dataset contains conflicting information, mention it politely.\n\n\nINPUT:\nuser first name: {{ $json.message.from.first_name }}\nuser input: {{ $json.message.text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        880,
+        1104
+      ],
+      "id": "8a316375-b5eb-4b60-8858-11259500fc0b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-sonnet",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        848,
+        1328
+      ],
+      "id": "1eea18b0-1864-435c-a811-f3eb34eb04c3",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "NLZnrQVbL137Jiji",
+          "name": "RAG OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "call this tool to access the decision from the dataset they are in arabic ",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "lurag",
+          "mode": "list",
+          "cachedResultName": "lurag"
+        },
+        "useReranker": true,
+        "options": {
+          "pineconeNamespace": "FAQ2"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        976,
+        1328
+      ],
+      "id": "0bf9212e-5293-41c4-98b7-541bfa0609f1",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "IVCcL1odmF0l7Ko3",
+          "name": "PineconeApi DEMO02RAG account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/parse/image",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "K82276913588957"
+            },
+            {
+              "name": "language",
+              "value": "ara"
+            },
+            {
+              "name": "isOverlayRequired",
+              "value": "false"
+            },
+            {
+              "name": "isCreateSearchablePdf",
+              "value": "true"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        1104
+      ],
+      "id": "4ae4e539-db8f-4a59-ada9-421759e15e87",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.SearchablePDFURL }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        432,
+        1104
+      ],
+      "id": "4300d2c9-27a5-47f1-afe0-f1f0dc3bd498",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {
+          "dimensions": 1024,
+          "batchSize": 1024,
+          "stripNewLines": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        1520
+      ],
+      "id": "de013e34-4c69-4736-8d41-aa75b3e5fc99",
+      "name": "Embeddings OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "4Mw0DebF7GUQBbVz",
+          "name": "Demo_openai_1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "rerank-multilingual-v3.0"
+      },
+      "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        1504
+      ],
+      "id": "c9709091-e97a-49b4-a3b3-811bbe2ec169",
+      "name": "Reranker Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "zkOvO2hzROKwko2n",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        48,
+        1104
+      ],
+      "id": "1cc0472c-8497-440e-9264-7f81f257034f",
+      "name": "Download file2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "n1MgYfU3HPUg9xam",
+          "name": "DEMO RAG mohammadfleity2002"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1StPWQ-Dkg8zOUX9frB9tvMKG0tiHn7bL",
+          "mode": "list",
+          "cachedResultName": "LU RAG ORG",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1StPWQ-Dkg8zOUX9frB9tvMKG0tiHn7bL"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        1104
+      ],
+      "id": "819d61a9-a22b-46b5-a9e7-a5beafb8ff91",
+      "name": "On File Created Google Drive Trigger2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "n1MgYfU3HPUg9xam",
+          "name": "DEMO RAG mohammadfleity2002"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "loader": "pdfLoader",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -176,
+        1648
+      ],
+      "id": "7326bcff-5aeb-4c3d-bc48-b4791a7cb326",
+      "name": "Default Data Loader2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        1808
+      ],
+      "id": "d321858e-37a7-4f80-a7ab-1a3e10bb01e9",
+      "name": "Recursive Character Text Splitter2"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "lurag",
+          "mode": "list",
+          "cachedResultName": "lurag"
+        },
+        "options": {
+          "clearNamespace": false,
+          "pineconeNamespace": "FAQ2"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -144,
+        1344
+      ],
+      "id": "ee4dbeb3-9f12-484d-9be2-3d50679a2a98",
+      "name": "Pinecone Vector Store3",
+      "credentials": {
+        "pineconeApi": {
+          "id": "IVCcL1odmF0l7Ko3",
+          "name": "PineconeApi DEMO02RAG account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 🧠 Standard RAG Model Workflow\n\nThis workflow is triggered automatically when a file is uploaded to a specific Google Drive folder.\nUpon activation:\n\n1 - The file is dowloaded.\n\n2 - Text embeddings are generated using **OpenAI Embeddings**.\n\n3 - The embeddings are then stored in a **Pinecone** vector database.\n\nThese stored vectors are later retrieved and utilized by a Chat/AI Agent model to provide context-aware responses and document-based reasoning.",
+        "height": 400,
+        "width": 544,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        688,
+        432
+      ],
+      "typeVersion": 1,
+      "id": "ba40058f-42e4-41d8-9dc0-b7a907ea8ead",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": false
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        1104
+      ],
+      "id": "00439667-1268-4f8e-8309-866abd3e5bf9",
+      "name": "LU_RAG_BOT",
+      "webhookId": "eca9237c-86ea-4932-abb7-43acf5bb4bed",
+      "credentials": {
+        "telegramApi": {
+          "id": "MdZAVaSOHrcNQZsT",
+          "name": "LU_RAG_API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('LU_RAG_BOT').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1216,
+        1104
+      ],
+      "id": "ca7c55a6-bfa0-45f1-bdf6-c983418fcb00",
+      "name": "LU_RAG_BOT_reply",
+      "webhookId": "91d28416-2350-43cf-a0b0-c2ac3b00bf79",
+      "credentials": {
+        "telegramApi": {
+          "id": "MdZAVaSOHrcNQZsT",
+          "name": "LU_RAG_API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On File Created Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Pinecone Vector Store3",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reranker Cohere": {
+      "ai_reranker": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_reranker",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On File Created Google Drive Trigger2": {
+      "main": [
+        [
+          {
+            "node": "Download file2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader2": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store3",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter2": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader2",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LU_RAG_BOT": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "LU_RAG_BOT_reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "03d384ec-76fc-4c22-9602-d5c7b44cc348",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "041637c537186180c250d3f36db431f05aee103c83d1bf9dfc81f467780c716a"
+  },
+  "id": "l2ObHMVWPOEcGRKc",
+  "tags": []
+}
